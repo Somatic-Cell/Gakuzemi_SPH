@@ -4,7 +4,7 @@ Shader "Custom/SPH3D"
     {
         _MainTex("Texture", 2D) = "black" {}
         _ParticleRadius("Particle Radius", Float) = 0.05
-        _WaterColor("WaterColor", Color) = (1, 1, 1, 1)
+        _Color("Color", Color) = (1, 1, 1, 1)
     }
     
     CGINCLUDE
@@ -12,7 +12,7 @@ Shader "Custom/SPH3D"
 
     sampler2D _MainTex;
     float4 _MainTex_ST;
-    fixed4 _WaterColor;
+    fixed4 _Color;
 
     float _ParticleRadius;
     float4x4 _InvViewMatrix;
@@ -30,7 +30,9 @@ Shader "Custom/SPH3D"
 
     struct FluidParticle {
         float3 position;
+        float dummy0;
         float3 velocity;
+        float dummy1;
     };
 
     StructuredBuffer<FluidParticle> _ParticlesBuffer;
@@ -40,8 +42,9 @@ Shader "Custom/SPH3D"
     // -----------------------------------------------
     v2g vert(uint id : SV_VertexID) {
         v2g o = (v2g)0;
-        o.pos = float4(_ParticlesBuffer[id].position.xy, 0, 1);
-        o.color = float4(0, 0.1, 0.1, 1);
+        o.pos = float4(_ParticlesBuffer[id].position.xyz, 1);
+        o.color = lerp(float4(0, 0.1, 0.8, 1), float4(0.9, 0.9, 0.9, 1), clamp(length(_ParticlesBuffer[id].velocity), 0, 1));
+        //o.color = lerp(0.1, float4(0, 0.1, 0.8, 1), float4(0, 0.1, 0.8, 1));
         return o;
     }
 
@@ -79,7 +82,8 @@ Shader "Custom/SPH3D"
     // Fragment Shader
     // -----------------------------------------------
     fixed4 frag(g2f input) : SV_Target{
-        return tex2D(_MainTex, input.tex) * _WaterColor;
+        return tex2D(_MainTex, input.tex) * _Color * input.color;
+        //return tex2D(_MainTex, input.tex) * _WaterColor;
     }
 
     ENDCG

@@ -1,4 +1,5 @@
-﻿// Each #kernel tells which function to compile; you can have many kernels
+﻿#pragma enable_d3d11_debug_symbols
+// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel DensityCS
 #pragma kernel PressureCS
 #pragma kernel ForceCS
@@ -10,7 +11,9 @@
 // 構造化バッファの定義 --------------------------
 struct Particle {
     float3 position;
+    float dummy0;
     float3 velocity;
+    float dummy1;
 };
 
 struct ParticlePressure {
@@ -81,7 +84,7 @@ inline float CalculateDensity(
 inline float CalculatePressure(
     float density // 密度
 ) {
-    return _PressureStiffness * max(abs(pow(density / _RestDensity, 7)) - 1.f, 0.f);
+    return _PressureStiffness * max(pow(density / _RestDensity, 7) - 1.f, 0.f);
 }
 
 /// Spiky カーネルの実装
@@ -237,13 +240,13 @@ void IntegrateCS(uint3 DTid : SV_DispatchThreadID) {
     acceleration += min(dist, 0.f) * -_WallStiffness * float3(-1.f, 0.f, 0.f);
 
     dist = dot(float4(position, 1.f), float4(-1.f, 0.f, 0.f, _Range.y));
-    acceleration += min(dist, 0.f) * -_WallStiffness * float3(-1.f, 0.f, 0.f);
+    acceleration += min(dist, 0.f) * -_WallStiffness * float3(0.f, -1.f, 0.f);
 
     dist = dot(float4(position, 1.f), float4(-1.f, 0.f, 0.f, _Range.z));
-    acceleration += min(dist, 0.f) * -_WallStiffness * float3(-1.f, 0.f, 0.f);
+    acceleration += min(dist, 0.f) * -_WallStiffness * float3(0.f, 0.f, -1.f);
 
     // 重力の計算
-    acceleration += _Gravity;
+    //acceleration += _Gravity;
 
     // 前進オイラー法で次の粒子位置を更新
     velocity += _TimeStep * acceleration;

@@ -6,7 +6,9 @@ namespace Yokota.Fluid
     public struct FluidParticle
     {
         public Vector3 Position;
+        public float dummy0;
         public Vector3 Velocity;
+        public float dummy1;
     }
 
 
@@ -50,7 +52,7 @@ namespace Yokota.Fluid
             if (isMouseDown)
             {
                 Vector3 mousePos = Input.mousePosition;
-                mousePos.z = 10f;
+                mousePos.z = 0f;
                 screenToWorldPointPos = Camera.main.ScreenToWorldPoint(mousePos);
             }
 

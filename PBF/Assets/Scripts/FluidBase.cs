@@ -51,6 +51,9 @@ namespace Yokota.Fluid
         private float gradPressureCoef;                                                     // Spiky カーネルの密度係数．
         private float lapViscosityCoef;                                                     // Laplacian カーネルの密度係数．
 
+        public Vector3[] acceleration = new Vector3[1024];
+        public float[] pressure = new float[1024];
+
         #region DirectConpute
         private ComputeShader fluidCS;
         private static readonly int THREAD_SIZE_X = 1024;
@@ -155,6 +158,12 @@ namespace Yokota.Fluid
             fluidCS.SetBuffer(kernelID, "_ParticlesPressureBufferRead", particlesPressureBuffer);
             fluidCS.SetBuffer(kernelID, "_ParticlesForceBufferWrite", particlesForceBuffer);
             fluidCS.Dispatch(kernelID, threadGroupX, 1, 1);
+
+            particlesForceBuffer.GetData(acceleration);
+            Debug.Log(acceleration[1023]);
+
+            //particlesPressureBuffer.GetData(pressure);
+            //Debug.Log(pressure[1023]);
 
             // 位置更新
             kernelID = fluidCS.FindKernel("IntegrateCS");
