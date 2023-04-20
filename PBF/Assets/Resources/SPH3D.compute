@@ -220,7 +220,7 @@ void IntegrateCS(uint3 DTid : SV_DispatchThreadID) {
     float3 acceleration = _ParticlesForceBufferRead[P_ID].acceleration;
 
     // マウスインタラクション
-    if ((distance(position, _MousePos) < _MouseRadius) && !_MouseDown) {
+    if ((distance(position, _MousePos) < _MouseRadius) && _MouseDown) {
         float3 dir = position - _MousePos;
         float pushBack = _MouseRadius - length(dir);
         acceleration += 100.f * pushBack * normalize(dir);
@@ -234,19 +234,19 @@ void IntegrateCS(uint3 DTid : SV_DispatchThreadID) {
     acceleration += min(dist, 0.f) * -_WallStiffness * float3(0.f, 1.f, 0.f);
 
     dist = dot(float4(position, 1.f), float4(0.f, 0.f, 1.f, 0.f));
-    acceleration += min(dist, 0.f) * -_WallStiffness * float3(1.f, 0.f, 1.f);
+    acceleration += min(dist, 0.f) * -_WallStiffness * float3(0.f, 0.f, 1.f);
 
     dist = dot(float4(position, 1.f), float4(-1.f, 0.f, 0.f, _Range.x));
     acceleration += min(dist, 0.f) * -_WallStiffness * float3(-1.f, 0.f, 0.f);
 
-    dist = dot(float4(position, 1.f), float4(-1.f, 0.f, 0.f, _Range.y));
+    dist = dot(float4(position, 1.f), float4(0.f, -1.f, 0.f, _Range.y));
     acceleration += min(dist, 0.f) * -_WallStiffness * float3(0.f, -1.f, 0.f);
 
-    dist = dot(float4(position, 1.f), float4(-1.f, 0.f, 0.f, _Range.z));
+    dist = dot(float4(position, 1.f), float4(0.f, 0.f, -1.f, _Range.z));
     acceleration += min(dist, 0.f) * -_WallStiffness * float3(0.f, 0.f, -1.f);
 
     // 重力の計算
-    //acceleration += _Gravity;
+    acceleration += _Gravity;
 
     // 前進オイラー法で次の粒子位置を更新
     velocity += _TimeStep * acceleration;

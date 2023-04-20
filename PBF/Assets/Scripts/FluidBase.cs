@@ -106,7 +106,7 @@ namespace Yokota.Fluid
             fluidCS.SetFloat("_RestDensity", restDensity);
             fluidCS.SetFloat("_Viscosity", viscosity);
             fluidCS.SetFloat("_DensityCoef", densityCoef);
-            fluidCS.SetFloat("_GradPressueCoef", gradPressureCoef);
+            fluidCS.SetFloat("_GradPressureCoef", gradPressureCoef);
             fluidCS.SetFloat("_LapViscosityCoef", lapViscosityCoef);
             fluidCS.SetFloat("_WallStiffness", wallStiffness);
             fluidCS.SetVector("_Range", range);
@@ -159,8 +159,8 @@ namespace Yokota.Fluid
             fluidCS.SetBuffer(kernelID, "_ParticlesForceBufferWrite", particlesForceBuffer);
             fluidCS.Dispatch(kernelID, threadGroupX, 1, 1);
 
-            particlesForceBuffer.GetData(acceleration);
-            Debug.Log(acceleration[1023]);
+            //particlesForceBuffer.GetData(acceleration);
+            //Debug.Log(acceleration[1023]);
 
             //particlesPressureBuffer.GetData(pressure);
             //Debug.Log(pressure[1023]);

@@ -15,7 +15,7 @@ namespace Yokota.Fluid
     public class Fluid3D : FluidBase<FluidParticle>
     {
         [SerializeField] private float ballRadius = 0.1f;           // 粒子位置初期化時の球半径．
-        [SerializeField] private float MouseInteractionRadius = 1f; // マウスインタラクションの範囲の広さ．
+        [SerializeField] private float MouseInteractionRadius = 2f; // マウスインタラクションの範囲の広さ．
 
         private bool isMouseDown;
         private Vector3 screenToWorldPointPos;
@@ -52,11 +52,14 @@ namespace Yokota.Fluid
             if (isMouseDown)
             {
                 Vector3 mousePos = Input.mousePosition;
-                mousePos.z = 0f;
+                GameObject camObj = GameObject.Find("Main Camera");
+                mousePos.z =  Vector3.Distance(camObj.transform.position, Vector3.zero);
+                //Debug.Log(mousePos.z);
                 screenToWorldPointPos = Camera.main.ScreenToWorldPoint(mousePos);
             }
 
             cs.SetVector("_MousePos", screenToWorldPointPos);
+            //Debug.Log(screenToWorldPointPos);
             cs.SetFloat("_MouseRadius", MouseInteractionRadius);
             cs.SetBool("_MouseDown", isMouseDown);
         }
