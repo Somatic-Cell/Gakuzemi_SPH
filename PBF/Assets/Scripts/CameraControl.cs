@@ -20,7 +20,6 @@ public class CameraControl : MonoBehaviour
         if (cam == null)
             return;
 
-        float sensitiveMove = 0.8f;
         float sensitiveRotate = 5f;
         float sensitiveZoom = 10f;
 
@@ -28,8 +27,8 @@ public class CameraControl : MonoBehaviour
         {
             float rotateX = Input.GetAxis("Mouse X") * sensitiveRotate;
             float rotateY = Input.GetAxis("Mouse Y") * sensitiveRotate;
-            cam.transform.RotateAround(new Vector3(4, 4, 4), Vector3.up, rotateX);
-            cam.transform.RotateAround(new Vector3(4, 4, 4), cam.transform.right, rotateY);
+            cam.transform.RotateAround(new Vector3(2, 2, 2), Vector3.up, rotateX);
+            cam.transform.RotateAround(new Vector3(2, 2, 2), cam.transform.right, rotateY);
         } 
 
         float moveZ = Input.GetAxis("Mouse ScrollWheel") * sensitiveZoom;

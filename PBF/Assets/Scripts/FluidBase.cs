@@ -28,7 +28,7 @@ namespace Yokota.Fluid
 
     struct FluidParticleForce
     {
-        public Vector3 Acceleration;
+        public Vector4 Acceleration;
     }
 
     public abstract class FluidBase<T> : MonoBehaviour where T : struct
@@ -51,7 +51,7 @@ namespace Yokota.Fluid
         private float gradPressureCoef;                                                     // Spiky カーネルの密度係数．
         private float lapViscosityCoef;                                                     // Laplacian カーネルの密度係数．
 
-        public Vector3[] acceleration = new Vector3[1024];
+        public Vector4[] acceleration = new Vector4[1024];
         public float[] pressure = new float[1024];
 
         #region DirectConpute
@@ -162,8 +162,16 @@ namespace Yokota.Fluid
             //particlesForceBuffer.GetData(acceleration);
             //Debug.Log(acceleration[1023]);
 
+            particlesDensityBuffer.GetData(pressure);
             //particlesPressureBuffer.GetData(pressure);
-            //Debug.Log(pressure[1023]);
+            Debug.Log(pressure[1023]);
+
+            //var particles = new FluidParticle[numParticles];
+            //particlesBufferRead.GetData(particles);
+            //Debug.Log(particles[1023].Velocity);
+            ////Debug.Log(particles[1023].Position);
+            //particles = null;
+
 
             // 位置更新
             kernelID = fluidCS.FindKernel("IntegrateCS");
@@ -174,7 +182,6 @@ namespace Yokota.Fluid
 
             // バッファの入れ替え
             SwapComputeBuffer(ref particlesBufferRead, ref particlesBufferWrite);
-
         }
 
         /// <summary>

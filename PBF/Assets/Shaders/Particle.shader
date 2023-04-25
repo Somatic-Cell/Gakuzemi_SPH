@@ -47,7 +47,6 @@ Shader "Custom/SPH3D"
         o.pos = float4(_ParticlesBuffer[id].position.xyz, 1);
         speed = clamp(length(_ParticlesBuffer[id].velocity) * 0.1f, 0, 1);
         //speed = clamp(length(_ParticlesBuffer[id].velocity) * 0.1f, 0, 1);
-        //o.color = lerp(float4(0, 0.1, 0.8, 1), float4(0.9, 0.9, 0.9, 1), speed * speed);
         o.color = (1.f - 2.f * min(speed, 0.5f)) * float4(0, 0, 1, 1) + (1.f - 2.f * abs(0.5f - speed)) * float4(0, 1, 0, 1) + (-1.f + 2.f * max(speed, 0.5f)) * float4(1, 0, 0, 1);
         //o.color = float4(0, 0.1, 0.8, 1);
         return o;

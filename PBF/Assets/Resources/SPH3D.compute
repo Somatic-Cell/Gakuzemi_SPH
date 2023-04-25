@@ -1,5 +1,6 @@
-﻿#pragma enable_d3d11_debug_symbols
-// Each #kernel tells which function to compile; you can have many kernels
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma enable_d3d11_debug_symbols
+
 #pragma kernel DensityCS
 #pragma kernel PressureCS
 #pragma kernel ForceCS
@@ -10,10 +11,8 @@
 
 // 構造化バッファの定義 --------------------------
 struct Particle {
-    float3 position;
-    float dummy0;
-    float3 velocity;
-    float dummy1;
+    float4 position;
+    float4 velocity;
 };
 
 struct ParticlePressure {
@@ -21,7 +20,7 @@ struct ParticlePressure {
 };
 
 struct ParticleForce {
-    float3 acceleration;
+    float4 acceleration;
 };
 
 struct ParticleDensity {
@@ -89,12 +88,12 @@ inline float CalculatePressure(
 
 /// Spiky カーネルの実装
 /// 参考：[Muller et al. 2003]
-inline float3 CalculateGradPressure(
+inline float4 CalculateGradPressure(
     float r,            // 粒子間距離
     float P_pressure,   // 自分の粒子が保持している圧力
     float N_pressure,   // 相手の粒子が保持している圧力
     float N_density,    // 相手の粒子が保持している密度
-    float3 diff         // 自分から相手へ向かうベクトル
+    float4 diff         // 自分から相手へ向かうベクトル
 ) {
     const float h = _Smoothlen;
     float avg_pressure = 0.5f * (P_pressure + N_pressure);
@@ -103,14 +102,14 @@ inline float3 CalculateGradPressure(
 
 /// Viscosity カーネルの実装
 /// 参考：[Muller et al. 2003]
-inline float3 CalculateLapViscosity(
+inline float4 CalculateLapViscosity(
     float r,            // 粒子間距離
-    float3 P_velocity,  // 自分の粒子が保持している速度
-    float3 N_velocity,  // 相手の粒子が保持している速度
+    float4 P_velocity,  // 自分の粒子が保持している速度
+    float4 N_velocity,  // 相手の粒子が保持している速度
     float N_density     // 相手の粒子が保持している密度
 ) {
     const float h = _Smoothlen;
-    float3 vel_diff = (N_velocity - P_velocity);
+    float4 vel_diff = (N_velocity - P_velocity);
     return _LapViscosityCoef / N_density * (h - r) * vel_diff;
 }
 
@@ -118,24 +117,25 @@ inline float3 CalculateLapViscosity(
 //密度の算出
 //-------------------------------------------------------
 [numthreads(THREAD_SIZE_X, 1, 1)]
-void DensityCS(uint DTid : SV_DispatchThreadID) {
+void DensityCS(uint3 DTid : SV_DispatchThreadID) {
     const uint P_ID = DTid.x;                 // 現在処理しているパーティクルID
 
     float h_sq = _Smoothlen * _Smoothlen;
-    float3 P_position = _ParticlesBufferRead[P_ID].position;
+    float4 P_position = _ParticlesBufferRead[P_ID].position;
 
     // 近傍探索 (O(n))
     float density = 0.f;
     for (uint N_ID = 0; N_ID < _NumParticles; N_ID++) {
         if (N_ID == P_ID) continue;     // 自身を計算対象とした場合スキップ
 
-        float3 N_position = _ParticlesBufferRead[N_ID].position;
+        float4 N_position = _ParticlesBufferRead[N_ID].position;
 
-        float3 diff = N_position - P_position;  // 自分から相手へ向かうベクトル
+        float4 diff = N_position - P_position;  // 自分から相手へ向かうベクトル
+        //float r_sq = max(dot(diff, diff), 0.000001f);           // 粒子間距離の2乗
         float r_sq = dot(diff, diff);           // 粒子間距離の2乗
 
         // 影響半径内に収まっている粒子のみ計算．
-        if (r_sq < h_sq) {
+        if (0.f < r_sq && r_sq < h_sq) {
             density += CalculateDensity(r_sq);
         }
     }
@@ -149,7 +149,7 @@ void DensityCS(uint DTid : SV_DispatchThreadID) {
 // 圧力の算出
 // -----------------------------------------------------------
 [numthreads(THREAD_SIZE_X, 1, 1)]
-void PressureCS(uint DTid : SV_DispatchThreadID) {
+void PressureCS(uint3 DTid : SV_DispatchThreadID) {
     const uint P_ID = DTid.x;                 // 現在処理しているパーティクルID
 
     float P_density = _ParticlesDensityBufferRead[P_ID].density;
@@ -164,31 +164,32 @@ void PressureCS(uint DTid : SV_DispatchThreadID) {
 // 力（加速度）の算出
 // -----------------------------------------------------------
 [numthreads(THREAD_SIZE_X, 1, 1)]
-void ForceCS(uint DTid : SV_DispatchThreadID) {
+void ForceCS(uint3 DTid : SV_DispatchThreadID) {
     const uint P_ID = DTid.x;                 // 現在処理しているパーティクルID
 
-    float3 P_position = _ParticlesBufferRead[P_ID].position;
-    float3 P_velocity = _ParticlesBufferRead[P_ID].velocity;
+    float4 P_position = _ParticlesBufferRead[P_ID].position;
+    float4 P_velocity = _ParticlesBufferRead[P_ID].velocity;
     float P_density = _ParticlesDensityBufferRead[P_ID].density;
     float P_pressure = _ParticlesPressureBufferRead[P_ID].pressure;
 
     const float h_sq = _Smoothlen * _Smoothlen;
 
     // 近傍探索 (O(n))
-    float3 press = float3(0.f, 0.f, 0.f);
-    float3 visco = float3(0.f, 0.f, 0.f);
+    float4 press = float4(0.f, 0.f, 0.f, 0.f);
+    float4 visco = float4(0.f, 0.f, 0.f, 0.f);
     for (uint N_ID = 0; N_ID < _NumParticles; N_ID++) {
         if (N_ID == P_ID) continue;     // 自身を計算対象とした場合スキップ
 
-        float3 N_position = _ParticlesBufferRead[N_ID].position;
+        float4 N_position = _ParticlesBufferRead[N_ID].position;
 
-        float3 diff = N_position - P_position;
+        float4 diff = N_position - P_position;
+        //float r_sq = max(dot(diff, diff), 0.0001f);
         float r_sq = dot(diff, diff);
 
-        if (r_sq < h_sq) {
+        if (0.f < r_sq && r_sq < h_sq) {
             float N_density = _ParticlesDensityBufferRead[N_ID].density;
             float N_pressure = _ParticlesPressureBufferRead[N_ID].pressure;
-            float3 N_velocity = _ParticlesBufferRead[N_ID].velocity;
+            float4 N_velocity = _ParticlesBufferRead[N_ID].velocity;
             float r = sqrt(r_sq);
 
             // 圧力項
@@ -200,7 +201,7 @@ void ForceCS(uint DTid : SV_DispatchThreadID) {
     }
 
     // 統合
-    float3 force = press + _Viscosity * visco;
+    float4 force = press + _Viscosity * visco;
 
     // 加速度バッファの更新
     _ParticlesForceBufferWrite[P_ID].acceleration = force / P_density;
@@ -215,38 +216,39 @@ void IntegrateCS(uint3 DTid : SV_DispatchThreadID) {
     const uint P_ID = DTid.x;                 // 現在処理しているパーティクルID
 
     // 更新前の位置と速度
-    float3 position = _ParticlesBufferRead[P_ID].position;
-    float3 velocity = _ParticlesBufferRead[P_ID].velocity;
-    float3 acceleration = _ParticlesForceBufferRead[P_ID].acceleration;
+    float4 position = _ParticlesBufferRead[P_ID].position;
+    float4 velocity = _ParticlesBufferRead[P_ID].velocity;
+    float4 acceleration = _ParticlesForceBufferRead[P_ID].acceleration;
 
     // マウスインタラクション
-    if ((distance(position, _MousePos) < _MouseRadius) && _MouseDown) {
-        float3 dir = position - _MousePos;
+    if ((distance(float3(position.x, position.y, position.z), _MousePos) < _MouseRadius) && _MouseDown) {
+        float4 dir = position - float4(_MousePos, 0.f);
         float pushBack = _MouseRadius - length(dir);
         acceleration += 100.f * pushBack * normalize(dir);
     }
 
+
     // 壁境界（ペナルティ法）
-    float dist = dot(float4(position, 1.f), float4(1.f, 0.f, 0.f, 0.f));
-    acceleration += min(dist, 0.f) * -_WallStiffness * float3(1.f, 0.f, 0.f);
+    float dist = dot(float4(position.x, position.y, position.z, 1.f), float4(1.f, 0.f, 0.f, 0.f));
+    acceleration += min(dist, 0.f) * -_WallStiffness * float4(1.f, 0.f, 0.f, 0.f);
 
-    dist = dot(float4(position, 1.f), float4(0.f, 1.f, 0.f, 0.f));
-    acceleration += min(dist, 0.f) * -_WallStiffness * float3(0.f, 1.f, 0.f);
+    dist = dot(float4(position.x, position.y, position.z, 1.f), float4(0.f, 1.f, 0.f, 0.f));
+    acceleration += min(dist, 0.f) * -_WallStiffness * float4(0.f, 1.f, 0.f, 0.f);
 
-    dist = dot(float4(position, 1.f), float4(0.f, 0.f, 1.f, 0.f));
-    acceleration += min(dist, 0.f) * -_WallStiffness * float3(0.f, 0.f, 1.f);
+    dist = dot(float4(position.x, position.y, position.z, 1.f), float4(0.f, 0.f, 1.f, 0.f));
+    acceleration += min(dist, 0.f) * -_WallStiffness * float4(0.f, 0.f, 1.f, 0.f);
 
-    dist = dot(float4(position, 1.f), float4(-1.f, 0.f, 0.f, _Range.x));
-    acceleration += min(dist, 0.f) * -_WallStiffness * float3(-1.f, 0.f, 0.f);
+    dist = dot(float4(position.x, position.y, position.z, 1.f), float4(-1.f, 0.f, 0.f, _Range.x));
+    acceleration += min(dist, 0.f) * -_WallStiffness * float4(-1.f, 0.f, 0.f, 0.f);
 
-    dist = dot(float4(position, 1.f), float4(0.f, -1.f, 0.f, _Range.y));
-    acceleration += min(dist, 0.f) * -_WallStiffness * float3(0.f, -1.f, 0.f);
+    dist = dot(float4(position.x, position.y, position.z, 1.f), float4(0.f, -1.f, 0.f, _Range.y));
+    acceleration += min(dist, 0.f) * -_WallStiffness * float4(0.f, -1.f, 0.f, 0.f);
 
-    dist = dot(float4(position, 1.f), float4(0.f, 0.f, -1.f, _Range.z));
-    acceleration += min(dist, 0.f) * -_WallStiffness * float3(0.f, 0.f, -1.f);
+    dist = dot(float4(position.x, position.y, position.z, 1.f), float4(0.f, 0.f, -1.f, _Range.z));
+    acceleration += min(dist, 0.f) * -_WallStiffness * float4(0.f, 0.f, -1.f, 0.f);
 
     // 重力の計算
-    acceleration += _Gravity;
+    acceleration += float4(_Gravity.x, _Gravity.y, _Gravity.z, 0.f);
 
     // 前進オイラー法で次の粒子位置を更新
     velocity += _TimeStep * acceleration;

@@ -143,12 +143,16 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -2003713038351125628, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
+      propertyPath: gravity.y
+      value: -9.81
+      objectReference: {fileID: 0}
+    - target: {fileID: -2003713038351125628, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
       propertyPath: smoothlen
-      value: 0.09
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: -2003713038351125628, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
       propertyPath: viscosity
-      value: 0.9
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: -2003713038351125628, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
       propertyPath: ballRadius
@@ -156,7 +160,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -2003713038351125628, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
       propertyPath: particleNum
-      value: 1024
+      value: 16384
       objectReference: {fileID: 0}
     - target: {fileID: -2003713038351125628, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
       propertyPath: restDensity
@@ -164,7 +168,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -2003713038351125628, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
       propertyPath: particleMass
-      value: 0.73
+      value: 0.28
       objectReference: {fileID: 0}
     - target: {fileID: -2003713038351125628, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
       propertyPath: wallStiffness
@@ -172,11 +176,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -2003713038351125628, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
       propertyPath: pressureStiffness
-      value: 0.01
+      value: 200000
       objectReference: {fileID: 0}
     - target: {fileID: -2003713038351125628, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
       propertyPath: maxAllowableTimestep
-      value: 0.0005
+      value: 0.003
       objectReference: {fileID: 0}
     - target: {fileID: 3454505888758745122, guid: c26ea872f621c844f935c21d1fe7f167, type: 3}
       propertyPath: m_Name
@@ -265,7 +269,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.1254902, g: 0.1254902, b: 0.1254902, a: 0}
+  m_BackGroundColor: {r: 0.8784314, g: 0.8784314, b: 0.8784314, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
